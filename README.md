@@ -9,8 +9,11 @@ Enterprise Applications for Big Data Using Spark, RealTime Streaming, HBase, Sol
 
 ## Contributions
 [Spark with Avro](https://github.com/databricks/spark-avro)
+
 [Spark with CSV](https://github.com/databricks/spark-csv)
+
 [Spark with RedShift](https://github.com/databricks/spark-redshift)
+
 [Spark with DynamoDB](https://github.com/cfregly/spark-dynamodb)
 
 
