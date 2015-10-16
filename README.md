@@ -7,4 +7,11 @@ Enterprise Applications for Big Data Using Spark, RealTime Streaming, HBase, Sol
 
 [How to create a Single RDD from Multiple Files](https://gist.github.com/mkanchwala/d6534e94ad5dc140b48b)
 
+## Contributions
+[Spark with Avro](https://github.com/databricks/spark-avro)
+[Spark with CSV](https://github.com/databricks/spark-csv)
+[Spark with RedShift](https://github.com/databricks/spark-redshift)
+[Spark with DynamoDB](https://github.com/cfregly/spark-dynamodb)
+
+
 **Please leave your comments in there for more answers or feedbacks**
