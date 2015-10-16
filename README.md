@@ -1,5 +1,5 @@
-# BigDataAnalytics
-Enterprise Applications for Big Data Using Spark, HBase, Solr, Hadoop and AWS Solutions etc.
+# BigData Analytics
+Enterprise Applications for Big Data Using Spark, RealTime Streaming, HBase, Solr, Hadoop and AWS Solutions etc.
 
 
 ## Gists
