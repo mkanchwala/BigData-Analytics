@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+	
+	<appender name="SYSLOG" class="org.apache.log4j.net.SyslogAppender">
+		<param name="Facility" value="LOCAL0" />
+		<param name="FacilityPrinting" value="false" />
+		<param name="SyslogHost" value="localhost" />
+		<param name="Threshold" value="INFO" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} %-5p [EP][%t|%c{1}] %L %M %m\n" />
+		</layout>
+	</appender>
+
+	<appender name="DEBUG" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="DatePattern" value="'-'yyyy-MM-dd'.log'" />
+		<param name="File" value="/home/mkanchwala/logs/jddm-debug" />
+		<param name="Threshold" value="DEBUG" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} %-5p [EP][%t|%c{1}] %L %M %m\n" />
+		</layout>
+	</appender>
+
+	<appender name="ERROR" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="DatePattern" value="'-'yyyy-MM-dd'.log'" />
+		<param name="File" value="/home/mkanchwala/logs/jddm-error" />
+		<param name="Threshold" value="ERROR" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} %-5p [EP][%t|%c{1}] %L %M %m\n" />
+		</layout>
+	</appender>
+
+	<appender name="TRACE" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="DatePattern" value="'-'yyyy-MM-dd'.log'" />
+		<param name="File" value="/home/mkanchwala/logs/jddm-trace" />
+		<param name="Threshold" value="TRACE" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} %-5p [EP][%t|%c{1}] %L %M %m\n" />
+		</layout>
+	</appender>
+
+	<appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.out" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{ISO8601} %-5p [EP][%t|%c{1}] %L %M %m\n" />
+		</layout>
+	</appender>
+
+	<logger name="com.mkanchwala" additivity="false">
+		<level value="TRACE" />
+		<appender-ref ref="SYSLOG" />
+		<appender-ref ref="DEBUG" />
+		<appender-ref ref="ERROR" />
+		<appender-ref ref="TRACE" />
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="org.apache.spark" additivity="false">
+		<level value="ERROR" />
+		<appender-ref ref="ERROR" />
+	</logger>
+
+	<!-- Everything else to catalina.out -->
+	<root>
+		<level value="ERROR" />
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="DEBUG" />
+		<appender-ref ref="ERROR" />
+		<appender-ref ref="TRACE" />
+	</root>
+</log4j:configuration>
