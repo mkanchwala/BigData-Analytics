@@ -1,6 +1,9 @@
 # BigData Analytics
 Enterprise Applications for Big Data Using Spark, RealTime Streaming, HBase, Solr, Hadoop and AWS Solutions etc.
 
+## POCs or Projects or Helper utilities
+
+[Kafka POC to manage Offset in Zookeeper ZNodes](https://github.com/mkanchwala/BigData-Analytics/tree/master/ep-kafka-connector)
 
 ## Gists
 [Create Kafka Multi Node, Multi Broker Cluster](https://gist.github.com/mkanchwala/fbfdd5ef866a58a77f6e)
