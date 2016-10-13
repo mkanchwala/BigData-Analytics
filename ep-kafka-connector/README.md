@@ -7,19 +7,38 @@ And install it on your windows system. And from the "windows" directory in insta
 
 ## Start Services using :
 
-zookeeper-server-start.bat ../../config/zookeeper.properties
-kafka-server-start.bat ../../config/server.properties
+To start the internal zookeeper, you can use the below command.
+
+	zookeeper-server-start.bat ../../config/zookeeper.properties
+	
+To Start the Kafka server with one broker, you can use the below command.
+
+	kafka-server-start.bat ../../config/server.properties
 
 ## Create topics and sample producer :
 
-kafka-topics.bat --create --zookeeper 127.0.0.1:2181 --replication-factor 1 --partitions 1 --topic test
-kafka-topics.bat --create --zookeeper 127.0.0.1:2181 --replication-factor 1 --partitions 1 --topic test2
-kafka-topics.bat --list --zookeeper 127.0.0.1:2181
+To create topics in Kafka, Use the below.
 
-kafka-console-producer.bat --broker-list 127.0.0.1:9092 --topic test
-kafka-console-producer.bat --broker-list 127.0.0.1:9092 --topic test2
+	kafka-topics.bat --create --zookeeper 127.0.0.1:2181 --replication-factor 1 --partitions 1 --topic test
+	kafka-topics.bat --create --zookeeper 127.0.0.1:2181 --replication-factor 1 --partitions 1 --topic test2
+	
+To List the multiple topics use.
+ 
+	kafka-topics.bat --list --zookeeper 127.0.0.1:2181
+	
+To open Manual Kafka Producer consoles use.
 
-zookeeper-shell 127.0.0.1:2181
+	kafka-console-producer.bat --broker-list 127.0.0.1:9092 --topic test
+	kafka-console-producer.bat --broker-list 127.0.0.1:9092 --topic test2
+
+To open the Zookeeper shell use
+
+	zookeeper-shell 127.0.0.1:2181
+	
+To see the details of the znode use 
+
+	ls /Spark
+	get /Spark/test -> will result in the value assigned to it.
 
 ## To run the Program 
 
