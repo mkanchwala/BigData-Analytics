@@ -1,6 +1,7 @@
 package com.mkanchwala.ep.kafka.app;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,8 @@ import org.apache.zookeeper.KeeperException;
 import com.google.common.collect.Lists;
 import com.mkanchwala.ep.zookeeper.app.ZKManager;
 
+import kafka.common.TopicAndPartition;
+import kafka.message.MessageAndMetadata;
 import kafka.serializer.StringDecoder;
 import scala.Tuple2;
 
@@ -66,7 +69,8 @@ public final class KafkaOffsetWordCount {
 		SparkConf sparkConf = new SparkConf().setAppName("KafkaOffsetWordCount").setMaster("local[4]");
 		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, Durations.seconds(2));
 
-		// Hold a reference to the current offset ranges, so it can be used downstream
+		// Hold a reference to the current offset ranges, so it can be used
+		// downstream
 		final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
 
 		Set<String> topicsSet = new HashSet<>(Arrays.asList(topics.split(",")));
@@ -75,34 +79,39 @@ public final class KafkaOffsetWordCount {
 
 		JavaPairInputDStream<String, String> messages = null;
 		if (zkClient.znode_exists(zkNode) == null) {
-			ZKManager.create(zkNode, "".getBytes());
-			for(String topic : topics.split(",")){
-				ZKManager.create(zkNode + "/" + topic, "".getBytes());
+			zkClient.create(zkNode, "".getBytes());
+			for (String topic : topics.split(",")) {
+				zkClient.create(zkNode + "/" + topic, "".getBytes());
 			}
 			// Create direct kafka stream with brokers and topics
-			messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, kafkaParams, topicsSet);
+			messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
+					StringDecoder.class, kafkaParams, topicsSet);
 		} else {
 
-		/*	 class MessageAndMetadataFunction implements Function<MessageAndMetadata<String, String>, Tuple2<String, String>>
-		        {
+			Map<TopicAndPartition, Long> startOffsetsMap = zkClient.findOffsetRange(zkNode);
+			logger.debug("Map Size : " + startOffsetsMap.size());
 
-		            @Override
-		            public Tuple2<String, String> call(MessageAndMetadata<String, String> v1)
-		                    throws Exception {
-		                // nothing is printed here
-		                System.out.println("topic = " + v1.topic() + ", partition = " + v1.partition());
-		                return new Tuple2<String, String>(v1.topic(), v1.message());
-		            }
-
-		        }
-			 
-			// TODO : Zookeeper read offset and start
-			messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, String.class, kafkaParams, startOffsetsMap, new MessageAndMetadataFunction());*/
+			JavaPairDStream<String, String> stream2 = KafkaUtils.createDirectStream(jssc, String.class, String.class,
+					StringDecoder.class, StringDecoder.class, String.class, kafkaParams, startOffsetsMap,
+					new Function<MessageAndMetadata<String, String>, String>() {
+						@Override
+						public String call(MessageAndMetadata<String, String> msgAndMd) {
+							return msgAndMd.message();
+						}
+					}).mapToPair(new PairFunction<String, String, String>() {
+					    public Tuple2<String, String> call(String v1) throws Exception {
+					    	return new Tuple2<String,String>(topics, v1);
+					    }
+					});;
 			
-			messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, kafkaParams, topicsSet);
+			stream2.print();
+			
+			// Create direct kafka stream with brokers and topics
+						messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
+								StringDecoder.class, kafkaParams, topicsSet);
+
 		}
 
-		
 		// Save : For Offset management in Zookeeper ZNode.
 		messages.transformToPair(new Function<JavaPairRDD<String, String>, JavaPairRDD<String, String>>() {
 			@Override
@@ -116,7 +125,8 @@ public final class KafkaOffsetWordCount {
 			public Void call(JavaPairRDD<String, String> rdd)
 					throws IOException, KeeperException, InterruptedException {
 				for (OffsetRange o : offsetRanges.get()) {
-					String stats = "topic=" + o.topic() + ";partition=" + o.partition() + ";fromOffset=" + o.fromOffset() + ";untilOffset=" + o.untilOffset();
+					String stats = "topic=" + o.topic() + ";partition=" + o.partition() + ";fromOffset="
+							+ o.fromOffset() + ";untilOffset=" + o.untilOffset();
 					logger.debug(stats);
 					zkClient.update(zkNode + "/" + o.topic(), stats.getBytes());
 				}
@@ -131,14 +141,14 @@ public final class KafkaOffsetWordCount {
 				return tuple2._2();
 			}
 		});
-		
+
 		JavaDStream<String> words = lines.flatMap(new FlatMapFunction<String, String>() {
 			@Override
 			public Iterable<String> call(String x) {
 				return Lists.newArrayList(Arrays.asList(SPACE.split(x)).iterator());
 			}
 		});
-		
+
 		JavaPairDStream<String, Integer> wordCounts = words.mapToPair(new PairFunction<String, String, Integer>() {
 			@Override
 			public Tuple2<String, Integer> call(String s) {
@@ -155,5 +165,29 @@ public final class KafkaOffsetWordCount {
 		// Start the computation
 		jssc.start();
 		jssc.awaitTermination();
+	}
+
+	public static class MessageProcessFunction implements Function<Tuple2<String, String>, MsgStruct> {
+		@Override
+		public MsgStruct call(Tuple2<String, String> data) throws Exception {
+			String message = data._2();
+			System.out.println("message:" + message);
+			return MsgStruct.parse(message);
+		}
+
+	}
+
+	public static class MsgStruct implements Serializable {
+		private String message;
+
+		public static MsgStruct parse(String msg) {
+			MsgStruct m = new MsgStruct();
+			m.message = msg;
+			return m;
+		}
+
+		public String toString() {
+			return "content inside=" + message;
+		}
 	}
 }
