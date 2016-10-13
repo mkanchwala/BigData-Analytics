@@ -1,6 +1,6 @@
 # Kafka Connector with Spark Streaming
 
-This POC shows the capability of Offset management in Zookeeper in ZNodes. This includes a sample Wordcount program in Spark Streaming which is managing the Offset as well in the Zookeeper Znode.
+This POC shows the capability of Offset management of multiple topics in Zookeeper in ZNodes for Direct Kafka Stream (Scala & Java both included). This includes a sample Wordcount program in Spark Streaming which is managing the Offset as well in the Zookeeper Znode.
 
 ## Download Kafka 0.9.0.1
 And install it on your windows system. And from the "windows" directory in installation execute below commands.
@@ -46,3 +46,5 @@ To see the details of the znode use
 
 	127.0.0.1:9092 test,test2 Spark
 	
+	
+**Please leave your comments in there for more answers or feedbacks**
