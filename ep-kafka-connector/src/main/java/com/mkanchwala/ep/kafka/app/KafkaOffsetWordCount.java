@@ -1,7 +1,6 @@
 package com.mkanchwala.ep.kafka.app;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +43,6 @@ import scala.Tuple2;
  * Example: $ bin/run-example streaming.JavaDirectKafkaWordCount
  * broker1-host:port,broker2-host:port \ topic1,topic2
  */
-
 public final class KafkaOffsetWordCount {
 	private static Logger logger = Logger.getLogger(KafkaOffsetWordCount.class);
 	private static ZKManager zkClient = new ZKManager("127.0.0.1");
@@ -102,12 +100,11 @@ public final class KafkaOffsetWordCount {
 					    public Tuple2<String, String> call(String v1) throws Exception {
 					    	return new Tuple2<String,String>(topics, v1);
 					    }
-					});;
-			
+					});
 			stream2.print();
 			
 			// Create direct kafka stream with brokers and topics
-						messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
+			messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
 								StringDecoder.class, kafkaParams, topicsSet);
 
 		}
@@ -165,29 +162,5 @@ public final class KafkaOffsetWordCount {
 		// Start the computation
 		jssc.start();
 		jssc.awaitTermination();
-	}
-
-	public static class MessageProcessFunction implements Function<Tuple2<String, String>, MsgStruct> {
-		@Override
-		public MsgStruct call(Tuple2<String, String> data) throws Exception {
-			String message = data._2();
-			System.out.println("message:" + message);
-			return MsgStruct.parse(message);
-		}
-
-	}
-
-	public static class MsgStruct implements Serializable {
-		private String message;
-
-		public static MsgStruct parse(String msg) {
-			MsgStruct m = new MsgStruct();
-			m.message = msg;
-			return m;
-		}
-
-		public String toString() {
-			return "content inside=" + message;
-		}
 	}
 }
