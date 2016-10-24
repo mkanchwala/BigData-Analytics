@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
@@ -49,7 +50,7 @@ public final class KafkaOffsetWordCount {
 
 	private static final Pattern SPACE = Pattern.compile(" ");
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "serial" })
 	public static void main(String[] args) throws Exception {
 		if (args.length < 2) {
 			System.err.println("Usage: JavaDirectKafkaWordCount <brokers> <topics>\n"
@@ -69,75 +70,58 @@ public final class KafkaOffsetWordCount {
 
 		// Hold a reference to the current offset ranges, so it can be used
 		// downstream
-		final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
-
 		Set<String> topicsSet = new HashSet<>(Arrays.asList(topics.split(",")));
 		Map<String, String> kafkaParams = new HashMap<>();
 		kafkaParams.put("metadata.broker.list", brokers);
+		kafkaParams.put("auto.offset.reset", "largest");
 
-		JavaPairInputDStream<String, String> messages = null;
+		JavaDStream<String> lines = null;
+
 		if (zkClient.znode_exists(zkNode) == null) {
+			logger.debug("Taking Fresh Stream .... ");
 			zkClient.create(zkNode, "".getBytes());
 			for (String topic : topics.split(",")) {
 				zkClient.create(zkNode + "/" + topic, "".getBytes());
 			}
 			// Create direct kafka stream with brokers and topics
-			messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
-					StringDecoder.class, kafkaParams, topicsSet);
+			lines = KafkaUtils
+					.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class,
+							kafkaParams, topicsSet)
+					.transform(new Function<JavaPairRDD<String, String>, JavaRDD<String>>() {
+						@Override
+						public JavaRDD<String> call(JavaPairRDD<String, String> pairRdd) throws Exception {
+							JavaRDD<String> rdd = pairRdd.map(new Function<Tuple2<String, String>, String>() {
+								@Override
+								public String call(Tuple2<String, String> arg0) throws Exception {
+									return arg0._2;
+								}
+							});
+							zkClient.saveOffset(((HasOffsetRanges) rdd.rdd()).offsetRanges(), zkNode);
+							return rdd;
+						}
+					});
 		} else {
 
+			logger.debug("Resuming operations .... ");
 			Map<TopicAndPartition, Long> startOffsetsMap = zkClient.findOffsetRange(zkNode);
 			logger.debug("Map Size : " + startOffsetsMap.size());
 
-			JavaPairDStream<String, String> stream2 = KafkaUtils.createDirectStream(jssc, String.class, String.class,
-					StringDecoder.class, StringDecoder.class, String.class, kafkaParams, startOffsetsMap,
+			lines = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
+					StringDecoder.class, String.class, kafkaParams, startOffsetsMap,
 					new Function<MessageAndMetadata<String, String>, String>() {
 						@Override
 						public String call(MessageAndMetadata<String, String> msgAndMd) {
 							return msgAndMd.message();
 						}
-					}).mapToPair(new PairFunction<String, String, String>() {
-					    public Tuple2<String, String> call(String v1) throws Exception {
-					    	return new Tuple2<String,String>(topics, v1);
-					    }
+					}).transform(new Function<JavaRDD<String>, JavaRDD<String>>() {
+
+						@Override
+						public JavaRDD<String> call(JavaRDD<String> rdd) throws Exception {
+							zkClient.saveOffset(((HasOffsetRanges) rdd.rdd()).offsetRanges(), zkNode);
+							return rdd;
+						}
 					});
-			stream2.print();
-			
-			// Create direct kafka stream with brokers and topics
-			messages = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
-								StringDecoder.class, kafkaParams, topicsSet);
-
 		}
-
-		// Save : For Offset management in Zookeeper ZNode.
-		messages.transformToPair(new Function<JavaPairRDD<String, String>, JavaPairRDD<String, String>>() {
-			@Override
-			public JavaPairRDD<String, String> call(JavaPairRDD<String, String> rdd) throws Exception {
-				OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-				offsetRanges.set(offsets);
-				return rdd;
-			}
-		}).foreachRDD(new Function<JavaPairRDD<String, String>, Void>() {
-			@Override
-			public Void call(JavaPairRDD<String, String> rdd)
-					throws IOException, KeeperException, InterruptedException {
-				for (OffsetRange o : offsetRanges.get()) {
-					String stats = "topic=" + o.topic() + ";partition=" + o.partition() + ";fromOffset="
-							+ o.fromOffset() + ";untilOffset=" + o.untilOffset();
-					logger.debug(stats);
-					zkClient.update(zkNode + "/" + o.topic(), stats.getBytes());
-				}
-				return null;
-			}
-		});
-
-		// Get the lines, split them into words, count the words and print
-		JavaDStream<String> lines = messages.map(new Function<Tuple2<String, String>, String>() {
-			@Override
-			public String call(Tuple2<String, String> tuple2) {
-				return tuple2._2();
-			}
-		});
 
 		JavaDStream<String> words = lines.flatMap(new FlatMapFunction<String, String>() {
 			@Override
