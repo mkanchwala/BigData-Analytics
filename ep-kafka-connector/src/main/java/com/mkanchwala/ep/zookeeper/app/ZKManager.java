@@ -22,6 +22,24 @@ import kafka.common.TopicAndPartition;
 
 /**
  * @author murtaza.kanchwala
+ * 
+ * This class is useful for Zookeeper ZNode related CRUD operations
+ * 
+ * To use create a Global variable for it and initialize in its Startup or init method.
+ * 
+ * In Class variables:-
+ * 
+ * 		private static ZKManager zkClient;
+ * 
+ * In Constructor:- 
+ * 
+ * ABCProcessor(){
+ * 		zkClient = new ZKManager(ConfigurationManager.getGeneralProprty(Constant.ZOOKEEPER_HOST));
+ * }
+ * 
+ * Usage:- See below methods for usage. 
+ * 
+ * For Ex:- zkClient.saveOffset(final OffsetRange[] offsets, final String zkNode);
  *
  */
 public class ZKManager {
@@ -34,15 +52,20 @@ public class ZKManager {
 		try {
 			zk = this.connect(node);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	// Method to connect zookeeper ensemble.
+	/**
+	 * Method to connect zookeeper ensemble.
+	 * 
+	 * @param host
+	 * @return ZooKeeper
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public ZooKeeper connect(String host) throws IOException, InterruptedException {
 
 		zk = new ZooKeeper(host, 5000, new Watcher() {
