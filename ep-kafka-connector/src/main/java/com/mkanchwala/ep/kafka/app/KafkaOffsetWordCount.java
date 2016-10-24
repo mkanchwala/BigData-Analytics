@@ -1,12 +1,10 @@
 package com.mkanchwala.ep.kafka.app;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
@@ -20,12 +18,9 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
-import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
 import org.apache.spark.streaming.kafka.KafkaUtils;
-import org.apache.spark.streaming.kafka.OffsetRange;
-import org.apache.zookeeper.KeeperException;
 
 import com.google.common.collect.Lists;
 import com.mkanchwala.ep.zookeeper.app.ZKManager;
@@ -36,13 +31,19 @@ import kafka.serializer.StringDecoder;
 import scala.Tuple2;
 
 /**
- * Consumes messages from one or more topics in Kafka and does wordcount. Usage:
- * JavaDirectKafkaWordCount <brokers> <topics> <brokers> is a list of one or
- * more Kafka brokers <topics> is a list of one or more kafka topics to consume
- * from
+ * Consumes messages from one or more topics in Kafka and does wordcount. 
+ * 
+ * Usage:
+ * 
+ * KafkaOffsetWordCount <brokers> <topics>
+ *  
+ * where, 
+ * 
+ * <brokers> is a list of one or more Kafka brokers 
+ * <topics> is a list of one or more kafka topics to consume from
+ * <zkNode> is the base path for zookeeper base znode.
  *
- * Example: $ bin/run-example streaming.JavaDirectKafkaWordCount
- * broker1-host:port,broker2-host:port \ topic1,topic2
+ * Example: $ KafkaOffsetWordCount 127.0.0.1:9092 test,test2 Spark 
  */
 public final class KafkaOffsetWordCount {
 	private static Logger logger = Logger.getLogger(KafkaOffsetWordCount.class);
