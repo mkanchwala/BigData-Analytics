@@ -1,10 +1,12 @@
 package com.mkanchwala.ep.kafka.app;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
@@ -18,9 +20,12 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
+import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
 import org.apache.spark.streaming.kafka.KafkaUtils;
+import org.apache.spark.streaming.kafka.OffsetRange;
+import org.apache.zookeeper.KeeperException;
 
 import com.google.common.collect.Lists;
 import com.mkanchwala.ep.zookeeper.app.ZKManager;
@@ -84,23 +89,23 @@ public final class KafkaOffsetWordCount {
 			for (String topic : topics.split(",")) {
 				zkClient.create(zkNode + "/" + topic, "".getBytes());
 			}
+			
 			// Create direct kafka stream with brokers and topics
-			lines = KafkaUtils
-					.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class,
-							kafkaParams, topicsSet)
-					.transform(new Function<JavaPairRDD<String, String>, JavaRDD<String>>() {
-						@Override
-						public JavaRDD<String> call(JavaPairRDD<String, String> pairRdd) throws Exception {
-							JavaRDD<String> rdd = pairRdd.map(new Function<Tuple2<String, String>, String>() {
-								@Override
-								public String call(Tuple2<String, String> arg0) throws Exception {
-									return arg0._2;
-								}
-							});
-							zkClient.saveOffset(((HasOffsetRanges) rdd.rdd()).offsetRanges(), zkNode);
-							return rdd;
-						}
-					});
+			lines = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, kafkaParams,
+                    topicsSet).transform(new Function<JavaPairRDD<String, String>, JavaRDD<String>>() {
+                @Override
+                public JavaRDD<String> call(JavaPairRDD<String, String> pairRdd) throws Exception {
+                	zkClient.saveOffset(((HasOffsetRanges) pairRdd.rdd()).offsetRanges(), zkNode);
+                	
+                    JavaRDD<String> rdd = pairRdd.map(new Function<Tuple2<String, String>, String>() {
+                        @Override
+                        public String call(Tuple2<String, String> message) throws Exception {
+                            return message._2;
+                        }
+                    });
+                    return rdd;
+                }
+            });
 		} else {
 
 			logger.debug("Resuming operations .... ");
@@ -147,5 +152,45 @@ public final class KafkaOffsetWordCount {
 		// Start the computation
 		jssc.start();
 		jssc.awaitTermination();
+	}
+	
+	/**
+	 * Method to save offset details and partition details topic wise.
+	 * 
+	 * @param messages
+	 * @param offsetRanges
+	 * @param zkNode
+	 */
+	@SuppressWarnings({ "deprecation", "unchecked", "serial", "rawtypes" })
+	public void saveOffset(JavaPairInputDStream messages, final AtomicReference<OffsetRange[]> offsetRanges, final String zkNode) {
+		messages.transform(new Function<JavaPairRDD<String, String>, JavaPairRDD<String, String>>() {
+			@Override
+			public JavaPairRDD<String, String> call(JavaPairRDD<String, String> rdd) throws Exception {
+				OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+				offsetRanges.set(offsets);
+				return rdd;
+			}
+		}).foreachRDD(new Function<JavaPairRDD<String, String>, Void>() {
+			@Override
+			public Void call(JavaPairRDD<String, String> rdd)
+					throws IOException, KeeperException, InterruptedException {
+				for (OffsetRange o : offsetRanges.get()) {
+					String stats = "topic=" + o.topic() + ";partition=" + o.partition() + ";fromOffset="
+							+ o.fromOffset() + ";untilOffset=" + o.untilOffset();
+					logger.debug(stats);
+				}
+				return null;
+			}
+
+		});
+	}
+	
+	@SuppressWarnings("unused")
+	private static void writeOffset(JavaRDD<String> rdd, final OffsetRange[] offsets) {
+		for (OffsetRange o : offsets) {
+			String stats = "topic=" + o.topic() + ";partition=" + o.partition() + ";fromOffset=" + o.fromOffset()
+					+ ";untilOffset=" + o.untilOffset();
+			logger.debug(stats);
+		}
 	}
 }
