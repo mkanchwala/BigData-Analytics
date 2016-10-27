@@ -1,6 +1,7 @@
 package com.mkanchwala.ep.zookeeper.app;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
@@ -40,8 +41,12 @@ import kafka.common.TopicAndPartition;
  * For Ex:- zkClient.saveOffset(final OffsetRange[] offsets, final String zkNode);
  *
  */
-public class ZKManager {
+public class ZKManager implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1982021503811997911L;
 	private static ZooKeeper zk;
 	private static Logger logger = Logger.getLogger(ZKManager.class);
 	
@@ -148,9 +153,10 @@ public class ZKManager {
 
 			List<String> children = zk.getChildren(path, false);
 			for (int i = 0; i < children.size(); i++) {
-				System.out.println(children.get(i)); 
-
-				byte[] b = zk.getData(path + "/" + children.get(i), new Watcher() {
+				List<String> partition = zk.getChildren(path + "/" + children.get(i), false);
+				
+				for (int j = 0; j < partition.size(); j++) {
+					byte[] b = zk.getData(path + "/" + children.get(i) + "/" + partition.get(j), new Watcher() {
 
 					@SuppressWarnings("incomplete-switch")
 					public void process(WatchedEvent we) {
@@ -165,27 +171,28 @@ public class ZKManager {
 							try {
 								byte[] bn = zk.getData(path, false, null);
 								String data = new String(bn, "UTF-8");
-								System.out.println(data);
-
+								logger.info(data);
 							} catch (Exception ex) {
-								System.out.println(ex.getMessage());
+								logger.info(ex.getMessage());
 							}
 						}
 					}
 				}, null);
 
 				String data = new String(b, "UTF-8");
-				System.out.println(data);
-				startOffsetsMap.put(
-						new TopicAndPartition(data.split(";")[0].split("=")[1],
-								Integer.parseInt(data.split(";")[1].split("=")[1])),
-						Long.parseLong(data.split(";")[2].split("=")[1]));
+				logger.info(data);
+				
+				String topicName = data.split(";")[0].split("=")[1];
+				Integer partitionNo = Integer.parseInt(data.split(";")[1].split("=")[1]);
+				Long untilOffset = Long.parseLong(data.split(";")[2].split("=")[1]);
+				startOffsetsMap.put(new TopicAndPartition(topicName,partitionNo),untilOffset);
 
 			}
+		  }
 		} else {
-			System.out.println("Node does not exists");
+			logger.info("Node does not exists");
 		}
-		System.out.println(startOffsetsMap.size());
+		logger.info("Map Size : " + startOffsetsMap.size());
 		return startOffsetsMap;
 	}
 	
@@ -200,10 +207,16 @@ public class ZKManager {
 	public void saveOffset(final OffsetRange[] offsets, final String zkNode) throws KeeperException, InterruptedException {
 
 		for (OffsetRange o : offsets) {
-			String stats = "topic=" + o.topic() + ";partition=" + o.partition() + ";fromOffset=" + o.fromOffset()
-					+ ";untilOffset=" + o.untilOffset();
+			String stats = "topic=" + o.topic() + ";partition=" + o.partition() + ";fromOffset=" + o.fromOffset() + ";untilOffset=" + o.untilOffset();
 			logger.debug(stats);
-			update(zkNode + "/" + o.topic(), stats.getBytes());
+			String zkPath = zkNode + "/" + o.topic()+ "/" + o.partition();
+			
+			Stat stat = znode_exists(zkPath);
+			if (stat != null) {
+				update(zkPath, stats.getBytes());
+			} else {
+				create(zkPath, stats.getBytes());
+			}
 		}
 	}
 }

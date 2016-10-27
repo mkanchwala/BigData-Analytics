@@ -110,7 +110,6 @@ public final class KafkaOffsetWordCount {
 
 			logger.debug("Resuming operations .... ");
 			Map<TopicAndPartition, Long> startOffsetsMap = zkClient.findOffsetRange(zkNode);
-			logger.debug("Map Size : " + startOffsetsMap.size());
 
 			lines = KafkaUtils.createDirectStream(jssc, String.class, String.class, StringDecoder.class,
 					StringDecoder.class, String.class, kafkaParams, startOffsetsMap,
