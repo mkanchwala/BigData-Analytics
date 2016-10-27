@@ -50,9 +50,14 @@ public class ZKManager implements Serializable{
 	private static ZooKeeper zk;
 	private static Logger logger = Logger.getLogger(ZKManager.class);
 	
-	public ZKManager(String node) {
+	public ZKManager(String node, String path) {
 		try {
 			zk = this.connect(node);
+			try {
+				this.create("/" + path, "".getBytes());
+			} catch (KeeperException e) {
+				e.printStackTrace();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {

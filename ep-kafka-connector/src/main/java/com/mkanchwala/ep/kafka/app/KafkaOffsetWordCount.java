@@ -52,7 +52,7 @@ import scala.Tuple2;
  */
 public final class KafkaOffsetWordCount {
 	private static Logger logger = Logger.getLogger(KafkaOffsetWordCount.class);
-	private static ZKManager zkClient = new ZKManager("127.0.0.1");
+	private static ZKManager zkClient;
 
 	private static final Pattern SPACE = Pattern.compile(" ");
 
@@ -68,7 +68,8 @@ public final class KafkaOffsetWordCount {
 
 		String brokers = args[0];
 		final String topics = args[1];
-		final String zkNode = "/" + args[2];
+		final String zkNode = "/" + args[2] +"/Znode";
+		zkClient = new ZKManager("ubuntu-02",args[2]);
 
 		// Create context with a 2 seconds batch interval
 		SparkConf sparkConf = new SparkConf().setAppName("KafkaOffsetWordCount").setMaster("local[4]");
