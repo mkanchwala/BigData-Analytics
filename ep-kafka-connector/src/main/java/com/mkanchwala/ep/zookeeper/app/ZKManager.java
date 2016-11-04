@@ -54,7 +54,9 @@ public class ZKManager implements Serializable{
 		try {
 			zk = this.connect(node);
 			try {
-				this.create("/" + path, "".getBytes());
+				if(this.znode_exists("/" + path) == null){
+					this.create("/" + path, "".getBytes());
+				}
 			} catch (KeeperException e) {
 				e.printStackTrace();
 			}

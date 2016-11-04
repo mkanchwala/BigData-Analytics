@@ -57,8 +57,8 @@ object KafkaDirectOffsetWordCount extends App {
   // Get the lines, split them into words, count the words and print
   val lines = messages.map(_._2)
   val words = lines.flatMap(_.split(" "))
-  /* val wordCounts = words.map(x => (x, 1L)).reduceByKey(_ + _)
-  wordCounts.print()*/
+   val wordCounts = words.map(x => (x, 1L)).reduceByKey(_ + _)
+  wordCounts.print()
 
   words.foreachRDD { rdd =>
 
