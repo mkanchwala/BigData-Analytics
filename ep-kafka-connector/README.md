@@ -54,7 +54,3 @@ To see the details of the znode use
 	
 	
 **Please leave your comments in there for more answers or feedbacks**
-
-Chalo ae pyara azizo chalo.
-
-biradar tu nasihat sun, haqiqat na gulo tu chun, zameen this aasmani ban, bhalu boi bhalu tu lan, hidayat no tu le rasto,firishta si tu kar rishto
