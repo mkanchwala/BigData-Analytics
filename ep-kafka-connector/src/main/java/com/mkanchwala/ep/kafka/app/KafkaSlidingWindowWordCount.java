@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.configuration.ConfigurationFactory.ConfigurationBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
@@ -15,6 +16,7 @@ import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
@@ -34,6 +36,7 @@ import org.apache.spark.streaming.kafka.KafkaUtils;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ServiceException;
+import com.mkanchwala.ep.hbase.dao.MyKryoRegistrator;
 import com.mkanchwala.ep.hbase.dao.WordCountDAO;
 import com.mkanchwala.ep.zookeeper.app.ZKManager;
 
@@ -85,6 +88,9 @@ public final class KafkaSlidingWindowWordCount {
 
 		// Create context with a 2 seconds batch interval
 		SparkConf sparkConf = new SparkConf().setAppName("KafkaOffsetWordCount").setMaster("local[4]");
+		sparkConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		sparkConf.set("spark.kryo.registrator", Put.class.getName());
+		
 		JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, Durations.seconds(2));
 
 		// Hold a reference to the current offset ranges, so it can be used

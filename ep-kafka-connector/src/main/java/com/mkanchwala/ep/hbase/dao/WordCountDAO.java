@@ -17,38 +17,24 @@ public class WordCountDAO implements Serializable {
 
 	private static final long serialVersionUID = -3816014552834940186L;
 
-	@SuppressWarnings("serial")
 	public void writeRowNewHadoopAPI(JavaRDD<Row> records, Configuration conf) {
-		
-		JavaPairRDD<ImmutableBytesWritable, Put> hbasePuts1 = records
+
+		JavaPairRDD<ImmutableBytesWritable, Put> hbasePuts = records
 				.mapToPair(new PairFunction<Row, ImmutableBytesWritable, Put>() {
+					private static final long serialVersionUID = 5006255093946286577L;
 
 					@SuppressWarnings("deprecation")
 					@Override
 					public Tuple2<ImmutableBytesWritable, Put> call(Row row) throws Exception {
 						System.out.println("Row : " + row.toString());
 						Put put = new Put(Bytes.toBytes("rowkey11"));
-						put.add(Bytes.toBytes("w1"), Bytes.toBytes("z"), Bytes.toBytes("value3"));
+						put.add(Bytes.toBytes("w1"), Bytes.toBytes("Z"), Bytes.toBytes("value3"));
 						return new Tuple2<ImmutableBytesWritable, Put>(new ImmutableBytesWritable(), put);
 					}
 
 				});
 		
-		
-		hbasePuts1.saveAsNewAPIHadoopDataset(conf);
-		/*JavaPairRDD<ImmutableBytesWritable, Put> hbasePuts = records
-				.mapToPair(new PairFunction<Row, ImmutableBytesWritable, Put>() {
-					@SuppressWarnings("deprecation")
-					@Override
-					public Tuple2<ImmutableBytesWritable, Put> call(Row row) throws Exception {
-						System.out.println("Row : " + row.toString());
-						Put put = new Put(Bytes.toBytes("rowkey11"));
-						put.add(Bytes.toBytes("w1"), Bytes.toBytes("z"), Bytes.toBytes("value3"));
-						return new Tuple2<ImmutableBytesWritable, Put>(new ImmutableBytesWritable(), put);
-					}
-				});
-		System.out.println("Blah ! " + hbasePuts.count());
-		System.out.println("Blah ! " + conf.get("hbase.master"));
-		hbasePuts.saveAsNewAPIHadoopDataset(conf);*/
+		if(!hbasePuts.isEmpty())
+			hbasePuts.saveAsNewAPIHadoopDataset(conf);
 	}
 }
