@@ -2,10 +2,16 @@
 
 This POC shows the capability of Offset management of multiple topics in Zookeeper in ZNodes for Direct Kafka Stream (Scala & Java both included). This includes a sample Wordcount program in Spark Streaming which is managing the Offset as well in the Zookeeper Znode.
 
-## Download Kafka 0.9.0.1
+## Download & Install Kafka 0.9.0.1
 And install it on your windows system. And from the "windows" directory in installation execute below commands.
 
+<For Distributed upcoming>
+
 ## Start Services using :
+
+Change Directory to :
+
+	cd C:\Softwares\kafka\bin\windows
 
 To start the internal zookeeper, you can use the below command.
 
@@ -48,3 +54,7 @@ To see the details of the znode use
 	
 	
 **Please leave your comments in there for more answers or feedbacks**
+
+Chalo ae pyara azizo chalo.
+
+biradar tu nasihat sun, haqiqat na gulo tu chun, zameen this aasmani ban, bhalu boi bhalu tu lan, hidayat no tu le rasto,firishta si tu kar rishto
