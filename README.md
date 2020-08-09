@@ -1,5 +1,5 @@
-# BigData Analytics
-Enterprise Applications for Big Data Using Spark, RealTime Streaming, HBase, Solr, Hadoop and AWS Solutions etc.
+# BigData Analytics - Accelerators
+Enterprise Applications for Big Data Using Spark, RealTime Streaming, HBase, Solr, Hadoop, Azure and AWS Solutions etc.
 
 ## POCs or Projects or Helper utilities
 
